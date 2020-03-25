@@ -1,10 +1,18 @@
 package master
 
 import (
+	"context"
+	"encoding/json"
+	"log"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
+	"github.com/s1m0n21/go-crontab/common"
 )
+
+const jobPrefix string = "/cron/jobs/"
+
+var JobMgr *jobMgr
 
 type jobMgr struct {
 	client *clientv3.Client
@@ -12,12 +20,10 @@ type jobMgr struct {
 	lease  clientv3.Lease
 }
 
-var JobMgr *jobMgr
-
 func InitJobMgr() (err error) {
 	config := clientv3.Config{
 		Endpoints:   Config.ETCD.Endpoints,
-		DialTimeout: time.Duration(Config.ETCD.DialTimeout) * time.Microsecond,
+		DialTimeout: time.Duration(Config.ETCD.DialTimeout) * time.Millisecond,
 	}
 
 	client, err := clientv3.New(config)
@@ -35,4 +41,28 @@ func InitJobMgr() (err error) {
 	}
 
 	return
+}
+
+func (jm *jobMgr) SaveJob(job *common.Job) (*common.Job, error) {
+	var oldJob *common.Job
+
+	jobKey := jobPrefix + job.Name
+	jobValue, err := json.Marshal(job)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := jm.kv.Put(context.TODO(), jobKey, string(jobValue), clientv3.WithPrevKV())
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.PrevKv != nil {
+		if err := json.Unmarshal(resp.PrevKv.Value, &oldJob); err != nil {
+			log.Println(err.Error())
+			return nil, nil
+		}
+	}
+
+	return oldJob, nil
 }
