@@ -1,0 +1,11 @@
+{
+  "api": {
+    "listen_port": 4567,
+    "read_timeout": 5000,
+    "write_timeout": 5000
+  },
+  "etcd": {
+    "endpoints": ["193.200.134.69:2379"],
+    "dial_timeout": 5000
+  }
+}
