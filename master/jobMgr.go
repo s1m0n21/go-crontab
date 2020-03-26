@@ -44,7 +44,7 @@ func InitJobMgr() (err error) {
 }
 
 func (jm *jobMgr) SaveJob(job *common.Job) (*common.Job, error) {
-	var oldJob *common.Job
+	var oldJob common.Job
 
 	jobKey := jobPrefix + job.Name
 	jobValue, err := json.Marshal(job)
@@ -64,5 +64,28 @@ func (jm *jobMgr) SaveJob(job *common.Job) (*common.Job, error) {
 		}
 	}
 
-	return oldJob, nil
+	return &oldJob, nil
+}
+
+func (jm *jobMgr) DeleteJob(name string) (*common.Job, error) {
+	jobKey := jobPrefix + name
+
+	var oldJob common.Job
+
+	resp, err := jm.kv.Delete(context.TODO(), jobKey, clientv3.WithPrevKV())
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println(resp.PrevKvs)
+
+	if len(resp.PrevKvs) != 0 {
+		if err := json.Unmarshal(resp.PrevKvs[0].Value, &oldJob); err != nil {
+			log.Println(err.Error())
+			return nil, nil
+		}
+		log.Println(oldJob)
+	}
+
+	return &oldJob, nil
 }

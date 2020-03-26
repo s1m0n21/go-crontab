@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"runtime"
+	"time"
 
 	"github.com/s1m0n21/go-crontab/master"
 )
@@ -34,5 +35,9 @@ func main() {
 
 	if err := master.InitAPI(); err != nil {
 		log.Fatal(err)
+	}
+
+	for {
+		time.Sleep(10 * time.Second)
 	}
 }

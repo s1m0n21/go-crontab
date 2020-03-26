@@ -55,10 +55,47 @@ func handleJobSave(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func handleJobDelete(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		log.Println(err.Error())
+		resp, _ := common.NewResponse(-1, err.Error(), nil)
+		w.Write(resp)
+		return
+	}
+
+	name := r.PostForm.Get("name")
+
+	if len(name) == 0 {
+		resp, _ := common.NewResponse(-1, "invalid param", nil)
+		w.Write(resp)
+		return
+	}
+
+	log.Println(name)
+
+	oldJob, err := JobMgr.DeleteJob(name)
+	if err != nil {
+		resp, _ := common.NewResponse(-1, err.Error(), nil)
+		w.Write(resp)
+		return
+	}
+
+	resp, err := common.NewResponse(0, "success", oldJob)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	_, _ = w.Write(resp)
+
+	return
+}
+
 func InitAPI() (err error) {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/job/save", handleJobSave)
+	mux.HandleFunc("/job/delete", handleJobDelete)
 
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(Config.API.ListenPort))
 	if err != nil {
