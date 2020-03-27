@@ -10,8 +10,6 @@ import (
 	"github.com/s1m0n21/go-crontab/common"
 )
 
-const jobPrefix string = "/cron/jobs/"
-
 var JobMgr *jobMgr
 
 type jobMgr struct {
@@ -44,9 +42,9 @@ func InitJobMgr() (err error) {
 }
 
 func (jm *jobMgr) SaveJob(job *common.Job) (*common.Job, error) {
-	var oldJob common.Job
+	var oldJob *common.Job
 
-	jobKey := jobPrefix + job.Name
+	jobKey := common.JOB_PREFIX + job.Name
 	jobValue, err := json.Marshal(job)
 	if err != nil {
 		return nil, err
@@ -64,13 +62,13 @@ func (jm *jobMgr) SaveJob(job *common.Job) (*common.Job, error) {
 		}
 	}
 
-	return &oldJob, nil
+	return oldJob, nil
 }
 
 func (jm *jobMgr) DeleteJob(name string) (*common.Job, error) {
-	jobKey := jobPrefix + name
+	jobKey := common.JOB_PREFIX + name
 
-	var oldJob common.Job
+	var oldJob *common.Job
 
 	resp, err := jm.kv.Delete(context.TODO(), jobKey, clientv3.WithPrevKV())
 	if err != nil {
@@ -87,5 +85,39 @@ func (jm *jobMgr) DeleteJob(name string) (*common.Job, error) {
 		log.Println(oldJob)
 	}
 
-	return &oldJob, nil
+	return oldJob, nil
+}
+
+func (jm *jobMgr) ListJobs() ([]common.Job, error) {
+	var job = common.Job{}
+	var jobList = make([]common.Job, 0)
+
+	resp, err := jm.kv.Get(context.TODO(), common.JOB_PREFIX, clientv3.WithPrefix())
+	if err != nil {
+		return nil, err
+	}
+
+	for _, kvPair := range resp.Kvs {
+		if err := json.Unmarshal(kvPair.Value, &job); err != nil {
+			log.Println(err.Error())
+			err = nil
+			continue
+		}
+		jobList = append(jobList, job)
+	}
+
+	return jobList, err
+}
+
+func (jm *jobMgr) killJob(name string) error {
+	key := common.JOB_KILLER_PREFIX + name
+
+	lease, err := jm.lease.Grant(context.TODO(), 1)
+	if err != nil {
+		return err
+	}
+
+	_, err = jm.kv.Put(context.TODO(), key, "", clientv3.WithLease(lease.ID))
+
+	return err
 }

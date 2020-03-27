@@ -91,11 +91,48 @@ func handleJobDelete(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func handleJobList(w http.ResponseWriter, r *http.Request) {
+	jobList, err := JobMgr.ListJobs()
+	if err != nil {
+		resp, _ := common.NewResponse(-1, err.Error(), nil)
+		w.Write(resp)
+		return
+	}
+
+	resp, _ := common.NewResponse(0, "success", jobList)
+	w.Write(resp)
+
+	return
+}
+
+func handleJobKill(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		resp, _ := common.NewResponse(-1, err.Error(), nil)
+		w.Write(resp)
+		return
+	}
+
+	name := r.PostForm.Get("name")
+
+	if err := JobMgr.killJob(name); err != nil {
+		resp, _ := common.NewResponse(-1, err.Error(), nil)
+		w.Write(resp)
+		return
+	}
+
+	resp, _ := common.NewResponse(0, "success", nil)
+	w.Write(resp)
+
+	return
+}
+
 func InitAPI() (err error) {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/job/save", handleJobSave)
 	mux.HandleFunc("/job/delete", handleJobDelete)
+	mux.HandleFunc("/job/list", handleJobList)
+	mux.HandleFunc("/job/kill", handleJobKill)
 
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(Config.API.ListenPort))
 	if err != nil {
