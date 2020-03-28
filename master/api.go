@@ -134,6 +134,10 @@ func InitAPI() (err error) {
 	mux.HandleFunc("/job/list", handleJobList)
 	mux.HandleFunc("/job/kill", handleJobKill)
 
+	static := http.Dir(Config.Web.Root)
+	staticHandler := http.FileServer(static)
+	mux.Handle("/", http.StripPrefix("/", staticHandler))
+
 	listener, err := net.Listen("tcp", ":"+strconv.Itoa(Config.API.ListenPort))
 	if err != nil {
 		return

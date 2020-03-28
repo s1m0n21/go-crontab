@@ -8,6 +8,7 @@ import (
 type config struct {
 	API  *apiConfig  `json:"api"`
 	ETCD *etcdConfig `json:"etcd"`
+	Web  *webConfig  `json:"web"`
 }
 
 type apiConfig struct {
@@ -19,6 +20,10 @@ type apiConfig struct {
 type etcdConfig struct {
 	Endpoints   []string `json:"endpoints"`
 	DialTimeout int      `json:"dial_timeout"`
+}
+
+type webConfig struct {
+	Root string `json:"root"`
 }
 
 var Config *config
