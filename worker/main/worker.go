@@ -37,6 +37,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if err := worker.InitExecutor(); err != nil {
+		log.Fatal(err)
+	}
+
 	worker.JobMgr.WatchJobs()
 
 	for {

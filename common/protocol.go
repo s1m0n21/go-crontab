@@ -20,10 +20,24 @@ type JobSchedulePlan struct {
 	Next time.Time
 }
 
+type JobExecuteInfo struct {
+	Job      *Job
+	PlanTime time.Time
+	RealTime time.Time
+}
+
 type HTTPResponse struct {
 	Code int         `json:"code"`
 	Msg  string      `json:"msg"`
 	Data interface{} `json:"data"`
+}
+
+type JobExecuteResult struct {
+	ExecInfo  *JobExecuteInfo
+	Output    []byte
+	Err       error
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 type JobEvent struct {
@@ -77,4 +91,12 @@ func BuildJobSchedulePlan(job *Job) (*JobSchedulePlan, error) {
 	}
 
 	return plan, nil
+}
+
+func BuildJobExecuteInfo(plan *JobSchedulePlan) *JobExecuteInfo {
+	return &JobExecuteInfo{
+		Job:      plan.Job,
+		PlanTime: plan.Next,
+		RealTime: time.Now(),
+	}
 }

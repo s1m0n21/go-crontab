@@ -88,3 +88,7 @@ func (jm *jobMgr) WatchJobs() error {
 
 	return nil
 }
+
+func (jm *jobMgr) CreateLock(name string) *JobLock {
+	return InitJobLock(name, jm.kv, jm.lease)
+}

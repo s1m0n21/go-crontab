@@ -7,8 +7,10 @@ import (
 )
 
 type scheduler struct {
-	Event chan *common.JobEvent
-	Plan  map[string]*common.JobSchedulePlan
+	Event      chan *common.JobEvent
+	Plan       map[string]*common.JobSchedulePlan
+	Executing  map[string]*common.JobExecuteInfo
+	ExecResult chan *common.JobExecuteResult
 }
 
 var Scheduler *scheduler
@@ -24,7 +26,7 @@ func (s *scheduler) TrySchedule() time.Duration {
 	for _, plan := range s.Plan {
 		if plan.Next.Before(now) || plan.Next.Equal(now) {
 			// TODO: Execute command
-			log.Println("exec ", plan.Job.Name)
+			s.TryStartJob(plan)
 			plan.Next = plan.Expr.Next(now)
 		}
 
@@ -39,6 +41,19 @@ func (s *scheduler) TrySchedule() time.Duration {
 	return nextSchedule
 }
 
+func (s *scheduler) TryStartJob(plan *common.JobSchedulePlan) {
+	if _, executing := s.Executing[plan.Job.Name]; executing {
+		log.Printf("last task[%v] has not ended, skip\n", plan.Job.Name)
+		return
+	}
+
+	execInfo := common.BuildJobExecuteInfo(plan)
+	s.Executing[plan.Job.Name] = execInfo
+
+	Executor.ExecuteJob(execInfo)
+	log.Printf("exec: %v | pt: %v | rt: %v\n", execInfo.Job.Name, execInfo.PlanTime, execInfo.RealTime)
+}
+
 func (s *scheduler) scheduleLoop() {
 	next := s.TrySchedule()
 	timer := time.NewTimer(next)
@@ -48,7 +63,8 @@ func (s *scheduler) scheduleLoop() {
 		case event := <-s.Event:
 			s.handleJobEvent(event)
 		case <-timer.C:
-
+		case result := <-s.ExecResult:
+			s.handleJobResult(result)
 		}
 
 		next = s.TrySchedule()
@@ -76,13 +92,24 @@ func (s *scheduler) handleJobEvent(event *common.JobEvent) {
 	}
 }
 
+func (s *scheduler) handleJobResult(result *common.JobExecuteResult) {
+	log.Printf("result: %v | st: %v | et: %v\n | err: %v", string(result.Output), result.StartTime, result.EndTime, result.Err)
+	delete(s.Executing, result.ExecInfo.Job.Name)
+}
+
 func InitScheduler() error {
 	Scheduler = &scheduler{
-		Event: make(chan *common.JobEvent, 1000),
-		Plan:  make(map[string]*common.JobSchedulePlan),
+		Event:      make(chan *common.JobEvent, 1000),
+		Plan:       make(map[string]*common.JobSchedulePlan),
+		Executing:  make(map[string]*common.JobExecuteInfo),
+		ExecResult: make(chan *common.JobExecuteResult, 1000),
 	}
 
 	go Scheduler.scheduleLoop()
 
 	return nil
+}
+
+func (s *scheduler) PushJobResult(result *common.JobExecuteResult) {
+	s.ExecResult <- result
 }
