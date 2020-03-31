@@ -2,8 +2,10 @@ package worker
 
 import (
 	"context"
-	"github.com/coreos/etcd/clientv3"
+
 	"github.com/s1m0n21/go-crontab/common"
+
+	"github.com/coreos/etcd/clientv3"
 )
 
 type JobLock struct {

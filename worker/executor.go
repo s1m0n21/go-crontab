@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"context"
+	"math/rand"
 	"os/exec"
 	"time"
 
@@ -14,7 +14,6 @@ type executor struct {
 var Executor *executor
 
 func (e *executor) ExecuteJob(info *common.JobExecuteInfo) {
-
 	go func() {
 		result := &common.JobExecuteResult{
 			ExecInfo:  info,
@@ -25,6 +24,8 @@ func (e *executor) ExecuteJob(info *common.JobExecuteInfo) {
 
 		lock := JobMgr.CreateLock(info.Job.Name)
 
+		time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+
 		err := lock.TryLock()
 		defer lock.Unlock()
 
@@ -34,16 +35,15 @@ func (e *executor) ExecuteJob(info *common.JobExecuteInfo) {
 		} else {
 			result.StartTime = time.Now()
 
-			cmd := exec.CommandContext(context.TODO(), "/bin/bash", "-c", info.Job.Command)
+			cmd := exec.CommandContext(info.Ctx, "/bin/bash", "-c", info.Job.Command)
 			output, err := cmd.CombinedOutput()
 
 			result.EndTime = time.Now()
 			result.Output = output
 			result.Err = err
-
-			Scheduler.PushJobResult(result)
-
 		}
+
+		Scheduler.PushJobResult(result)
 	}()
 }
 

@@ -1,9 +1,10 @@
 package worker
 
 import (
-	"github.com/s1m0n21/go-crontab/common"
 	"log"
 	"time"
+
+	"github.com/s1m0n21/go-crontab/common"
 )
 
 type scheduler struct {
@@ -51,7 +52,7 @@ func (s *scheduler) TryStartJob(plan *common.JobSchedulePlan) {
 	s.Executing[plan.Job.Name] = execInfo
 
 	Executor.ExecuteJob(execInfo)
-	log.Printf("exec: %v | pt: %v | rt: %v\n", execInfo.Job.Name, execInfo.PlanTime, execInfo.RealTime)
+	//log.Printf("exec: %v | pt: %v | rt: %v\n", execInfo.Job.Name, execInfo.PlanTime, execInfo.RealTime)
 }
 
 func (s *scheduler) scheduleLoop() {
@@ -85,15 +86,35 @@ func (s *scheduler) handleJobEvent(event *common.JobEvent) {
 		}
 		s.Plan[event.Job.Name] = plan
 	case common.JOB_EVENT_DELETE:
-		_, exist := s.Plan[event.Job.Name]
-		if exist {
+		if _, exist := s.Plan[event.Job.Name]; exist {
 			delete(s.Plan, event.Job.Name)
+		}
+	case common.JOB_EVENT_KILL:
+		if execInfo, executing := s.Executing[event.Job.Name]; executing {
+			execInfo.Cancel()
 		}
 	}
 }
 
 func (s *scheduler) handleJobResult(result *common.JobExecuteResult) {
-	log.Printf("result: %v | st: %v | et: %v\n | err: %v", string(result.Output), result.StartTime, result.EndTime, result.Err)
+	if result.Err != common.ERR_LOCK_ALREADY_REQUIRED {
+		log := &common.Log{
+			Name:         result.ExecInfo.Job.Name,
+			Command:      result.ExecInfo.Job.Command,
+			Output:       string(result.Output),
+			PlanTime:     result.ExecInfo.PlanTime.UnixNano() / 1000 / 1000,
+			ScheduleTime: result.ExecInfo.RealTime.UnixNano() / 1000 / 1000,
+			StartTime:    result.StartTime.UnixNano() / 1000 / 1000,
+			EndTime:      result.EndTime.UnixNano() / 1000 / 1000,
+		}
+		if result.Err != nil {
+			log.Err = result.Err.Error()
+		} else {
+			log.Err = ""
+		}
+	}
+
+	log.Printf("res: %v | st: %v | et: %v\n | err: %v", string(result.Output), result.StartTime, result.EndTime, result.Err)
 	delete(s.Executing, result.ExecInfo.Job.Name)
 }
 

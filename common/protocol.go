@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"time"
@@ -24,6 +25,8 @@ type JobExecuteInfo struct {
 	Job      *Job
 	PlanTime time.Time
 	RealTime time.Time
+	Ctx      context.Context
+	Cancel   context.CancelFunc
 }
 
 type HTTPResponse struct {
@@ -43,6 +46,17 @@ type JobExecuteResult struct {
 type JobEvent struct {
 	Typ int
 	Job *Job
+}
+
+type Log struct {
+	Name         string `bson: "name"`
+	Command      string `bson: "command"`
+	Output       string `bson: "output"`
+	Err          string `bson: "err"`
+	PlanTime     int64  `bson: "plan_time"`
+	ScheduleTime int64  `bson: "schedule_time"`
+	StartTime    int64  `bson: "start_time"`
+	EndTime      int64  `bson: "end_time"`
 }
 
 func NewResponse(code int, msg string, data interface{}) ([]byte, error) {
@@ -71,6 +85,10 @@ func ExtractJobName(key string) string {
 	return strings.TrimPrefix(key, JOB_PREFIX)
 }
 
+func ExtractKillerName(key string) string {
+	return strings.TrimPrefix(key, JOB_KILLER_PREFIX)
+}
+
 func BuildJobEvent(typ int, job *Job) *JobEvent {
 	return &JobEvent{
 		Typ: typ,
@@ -94,9 +112,13 @@ func BuildJobSchedulePlan(job *Job) (*JobSchedulePlan, error) {
 }
 
 func BuildJobExecuteInfo(plan *JobSchedulePlan) *JobExecuteInfo {
+	ctx, cancel := context.WithCancel(context.TODO())
+
 	return &JobExecuteInfo{
 		Job:      plan.Job,
 		PlanTime: plan.Next,
 		RealTime: time.Now(),
+		Ctx:      ctx,
+		Cancel:   cancel,
 	}
 }
