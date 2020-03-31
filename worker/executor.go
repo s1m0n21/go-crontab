@@ -2,9 +2,10 @@ package worker
 
 import (
 	"context"
-	"github.com/s1m0n21/go-crontab/common"
 	"os/exec"
 	"time"
+
+	"github.com/s1m0n21/go-crontab/common"
 )
 
 type executor struct {
@@ -24,14 +25,25 @@ func (e *executor) ExecuteJob(info *common.JobExecuteInfo) {
 
 		lock := JobMgr.CreateLock(info.Job.Name)
 
-		cmd := exec.CommandContext(context.TODO(), "/bin/bash", "-c", info.Job.Command)
-		output, err := cmd.CombinedOutput()
+		err := lock.TryLock()
+		defer lock.Unlock()
 
-		result.EndTime = time.Now()
-		result.Output = output
-		result.Err = err
+		if err != nil {
+			result.Err = err
+			result.EndTime = time.Now()
+		} else {
+			result.StartTime = time.Now()
 
-		Scheduler.PushJobResult(result)
+			cmd := exec.CommandContext(context.TODO(), "/bin/bash", "-c", info.Job.Command)
+			output, err := cmd.CombinedOutput()
+
+			result.EndTime = time.Now()
+			result.Output = output
+			result.Err = err
+
+			Scheduler.PushJobResult(result)
+
+		}
 	}()
 }
 
