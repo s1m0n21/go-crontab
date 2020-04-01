@@ -49,14 +49,26 @@ type JobEvent struct {
 }
 
 type Log struct {
-	Name         string `bson: "name"`
-	Command      string `bson: "command"`
-	Output       string `bson: "output"`
-	Err          string `bson: "err"`
-	PlanTime     int64  `bson: "plan_time"`
-	ScheduleTime int64  `bson: "schedule_time"`
-	StartTime    int64  `bson: "start_time"`
-	EndTime      int64  `bson: "end_time"`
+	Name         string `json:"name" bson: "name"`
+	Command      string `json:"command" bson: "command"`
+	Output       string `json:"output" bson: "output"`
+	Err          string `json:"err" bson: "err"`
+	PlanTime     int64  `json:"plan_time" bson: "plan_time"`
+	ScheduleTime int64  `json:"schedule_time" bson: "schedule_time"`
+	StartTime    int64  `json:"start_time" bson: "start_time"`
+	EndTime      int64  `json:"end_time" bson: "end_time"`
+}
+
+type LogBatch struct {
+	Logs []interface{}
+}
+
+type LogFilter struct {
+	JobName string `bson: "name"`
+}
+
+type SortLogByStartTime struct {
+	SortOrder int `bson: "start_time"`
 }
 
 func NewResponse(code int, msg string, data interface{}) ([]byte, error) {

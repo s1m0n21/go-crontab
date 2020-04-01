@@ -112,6 +112,7 @@ func (s *scheduler) handleJobResult(result *common.JobExecuteResult) {
 		} else {
 			log.Err = ""
 		}
+		Logger.Append(log)
 	}
 
 	log.Printf("res: %v | st: %v | et: %v\n | err: %v", string(result.Output), result.StartTime, result.EndTime, result.Err)

@@ -33,6 +33,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if err := master.InitLogmgr(); err != nil {
+		log.Fatal(err)
+	}
+
 	if err := master.InitAPI(); err != nil {
 		log.Fatal(err)
 	}

@@ -10,5 +10,13 @@
   },
   "web": {
     "root": "./web"
+  },
+  "mongo": {
+    "uri": "mongodb://193.200.134.69:27017",
+    "connect_timeout": 5000
+  },
+  "log": {
+    "batch_size": 100,
+    "commit_timeout": 1000
   }
 }

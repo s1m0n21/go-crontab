@@ -33,6 +33,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if err := worker.InitLogger(); err != nil {
+		log.Fatal(err)
+	}
+
 	if err := worker.InitJobMgr(); err != nil {
 		log.Fatal(err)
 	}

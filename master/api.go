@@ -126,6 +126,40 @@ func handleJobKill(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func handleJobLog(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		resp, _ := common.NewResponse(-1, err.Error(), nil)
+		w.Write(resp)
+		return
+	}
+
+	name := r.Form.Get("name")
+	skip := r.Form.Get("skip")
+	limit := r.Form.Get("limit")
+
+	skipInt, err := strconv.Atoi(skip)
+	if err != nil {
+		skipInt = 0
+	}
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		limitInt = 20
+	}
+
+	logArr, err := Logmgr.ListLogs(name, skipInt, limitInt)
+	if err != nil {
+		resp, _ := common.NewResponse(-1, err.Error(), nil)
+		w.Write(resp)
+		return
+	}
+
+	resp, _ := common.NewResponse(0, "success", logArr)
+	w.Write(resp)
+
+	return
+}
+
 func InitAPI() (err error) {
 	mux := http.NewServeMux()
 
@@ -133,6 +167,7 @@ func InitAPI() (err error) {
 	mux.HandleFunc("/job/delete", handleJobDelete)
 	mux.HandleFunc("/job/list", handleJobList)
 	mux.HandleFunc("/job/kill", handleJobKill)
+	mux.HandleFunc("/job/log", handleJobLog)
 
 	static := http.Dir(Config.Web.Root)
 	staticHandler := http.FileServer(static)

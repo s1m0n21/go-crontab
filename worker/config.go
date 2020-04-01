@@ -6,9 +6,11 @@ import (
 )
 
 type config struct {
-	API  *apiConfig  `json:"api"`
-	ETCD *etcdConfig `json:"etcd"`
-	Web  *webConfig  `json:"web"`
+	API   *apiConfig   `json:"api"`
+	ETCD  *etcdConfig  `json:"etcd"`
+	Web   *webConfig   `json:"web"`
+	Mongo *mongoConfig `json:"mongo"`
+	Log   *logConfig   `json:"log"`
 }
 
 type apiConfig struct {
@@ -24,6 +26,16 @@ type etcdConfig struct {
 
 type webConfig struct {
 	Root string `json:"root"`
+}
+
+type mongoConfig struct {
+	URI            string `json:"uri"`
+	ConnectTimeout int    `json:"connect_timeout"`
+}
+
+type logConfig struct {
+	BatchSize     int `json:"batch_size"`
+	CommitTimeout int `json:"commit_timeout"`
 }
 
 var Config *config
