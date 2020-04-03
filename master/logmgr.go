@@ -2,7 +2,6 @@ package master
 
 import (
 	"context"
-	"go.mongodb.org/mongo-driver/bson"
 	logging "log"
 	"time"
 
@@ -20,19 +19,11 @@ type logmgr struct {
 var Logmgr *logmgr
 
 func (lm *logmgr) ListLogs(name string, skip int, limit int) ([]*common.Log, error) {
-	filter := common.LogFilter{JobName: name}
-	//bFilter, err := bson.Marshal(&filter)
-	//logging.Println(err)
+	filter := common.LogFilter{Name: name}
 
 	sort := &common.SortLogByStartTime{SortOrder: -1}
 
-	bSort, err := bson.Marshal(sort)
-	logging.Println(err)
-
-	opts := options.Find()
-	opts.SetSort(bSort)
-	opts.SetSkip(int64(skip))
-	opts.SetLimit(int64(limit))
+	opts := options.Find().SetSort(sort).SetSkip(int64(skip)).SetLimit(int64(limit))
 
 	cursor, err := lm.collection.Find(context.TODO(), filter, opts)
 	defer cursor.Close(context.TODO())

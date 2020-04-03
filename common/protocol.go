@@ -64,7 +64,7 @@ type LogBatch struct {
 }
 
 type LogFilter struct {
-	JobName string `bson: "name"`
+	Name string `bson: "name"`
 }
 
 type SortLogByStartTime struct {

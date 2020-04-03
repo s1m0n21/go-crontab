@@ -78,8 +78,44 @@
         </div><!-- /.modal -->
     </div>
 
+    <div id="log-modal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">Log</h4>
+                </div>
+                <div class="modal-body">
+                    <table id="check-log" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Output</th>
+                                <th>Error</th>
+                                <th>Plan Time</th>
+                                <th>Schedule Time</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+    </div>
+
     <script type="text/javascript">
         $(document).ready(function() {
+            function formatTS(ts) {
+
+            }
+
             $("#job-list").on("click", ".edit-job", function (event) {
                 $("#job-list").on("click", ".edit-job", function (event) {
                     $("#edit-name").val($(this).parents("tr").children(".job-name").text());
@@ -135,6 +171,31 @@
                 $("#edit-modal").modal("show");
             });
 
+            $("#job-list").on("click", ".check-log", function (event) {
+                $("#check-log tbody").empty();
+                var jobName = $(this).parents("tr").children(".job-name").text();
+
+                $.ajax({
+                    url: "/job/log",
+                    dataType: "json",
+                    data: {name: jobName},
+                    success: function (resp) {
+                        if (resp.code != 0) {
+                            return
+                        }
+                        var logList = resp.data;
+                        for (var i = 0; i < logList.length; i++) {
+                            var log = logList[i];
+                            var tr = $("<tr>");
+                            tr.append($("<td>").html(log.command));
+                            tr.append($("<td>").html(log.output));
+                        }
+                    }
+                });
+
+                $("#log-modal").modal("show");
+            });
+
             function rebuildJobList() {
                 $.ajax({
                     url: "/job/list",
@@ -157,6 +218,7 @@
 
                             var toolbar = $("<div class='btn-toolbar'>")
                                 .append("<button class='btn btn-info edit-job'>Edit</button>")
+                                .append("<button class='btn btn-success check-log'>Log</button>")
                                 .append("<button class='btn btn-warning kill-job'>Kill</button>")
                                 .append("<button class='btn btn-danger delete-job'>Delete</button>");
 
